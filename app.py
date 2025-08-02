@@ -1,36 +1,21 @@
-from fastapi import FastAPI
-from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import os
-from omnidimension import Client
+from dotenv import load_dotenv
 
-# Load .env file
+# Load environment variables
 load_dotenv()
 
-# Get API Key from environment
-api_key = os.getenv("OMNIDIM_API_KEY")
-print("Loaded API key:", api_key)
-# Initialize OmniDimension client
-client = Client(api_key)
-
-# FastAPI app instance
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to OmniConnect - Voice Assistant"}
+# Mount static directory (if you have CSS/JS/images)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/agents")
-def get_all_agents():
-    try:
-        agents = client.agent.list()
-        return {"agents": agents}
-    except Exception as e:
-        return {"error": str(e)}
+# Jinja2 templates
+templates = Jinja2Templates(directory="templates")
 
-@app.get("/agent/{agent_id}")
-def get_agent_by_id(agent_id: str):
-    try:
-        agent = client.agent.get(agent_id)
-        return {"agent": agent}
-    except Exception as e:
-        return {"error": str(e)}
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
